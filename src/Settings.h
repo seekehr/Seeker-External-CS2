@@ -6,12 +6,19 @@
 struct Settings {
     bool menuVisible = false;
     bool espEnabled = true;
+    bool aimbotEnabled = false;
+    bool drawAimbotFov = true;
+    float aimbotSmoothness = 6.0f;
+    float aimbotFov = 120.0f;  // pixels from screen center
+    int aimbotKeyIndex = 0;  // 0=Mouse2, 1=Mouse1, 2=Mouse4, 3=Mouse5
+    bool aimbotKeyDropdownOpen = false;
+    bool saveConfigRequested = false;
 
     // Menu layout
     static constexpr int MENU_X = 24;
     static constexpr int MENU_Y = 24;
-    static constexpr int MENU_WIDTH = 280;
-    static constexpr int MENU_HEIGHT = 200;
+    static constexpr int MENU_WIDTH = 320;
+    static constexpr int MENU_HEIGHT = 340;
     static constexpr int ROW_HEIGHT = 36;
     static constexpr int TOGGLE_SIZE = 20;
     static constexpr int PADDING = 12;
@@ -29,6 +36,11 @@ struct Settings {
     void ToggleMenu();
     void HandleClick(int x, int y);
     bool IsPointInToggle(int x, int y, int index) const;
+    const char* GetAimbotKeyName() const;
+    int GetAimbotVirtualKey() const;
+    void SetAimbotKeyByIndex(int index);
+    bool ConsumeSaveConfigRequest();
+    void Clamp();
 };
 
 inline Settings g_Settings;

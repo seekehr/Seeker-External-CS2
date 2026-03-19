@@ -21,10 +21,16 @@ private:
     HDC hdc = nullptr;
     HDC memDC = nullptr;
     HBITMAP memBitmap = nullptr;
+    HBITMAP oldBitmap = nullptr;
     HWND targetWindow = nullptr;
+    RECT lastTargetRect{0, 0, 0, 0};
+    LONG_PTR cachedExStyle = 0;
+    bool windowShown = false;
 
     bool FindTargetWindow();
     void SetupTransparentWindow();
+    void RecreateBackbuffer(HDC windowDC);
+    void ReleaseBackbuffer();
 };
 
 inline Overlay g_Overlay;

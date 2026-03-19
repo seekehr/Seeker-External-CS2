@@ -3,8 +3,9 @@
 #include <cstdio>
 #include <cstdarg>
 
-// Debug logging for ESP - logs to console every N ms when enabled
-inline bool g_DebugESP = true;  // Set to false to disable debug output
+// Debug logging toggles
+inline bool g_DebugESP = false;     // Set true to enable ESP debug output
+inline bool g_DebugAimbot = true;   // Set false to disable aimbot debug output
 
 inline void DebugLog(const char* fmt, ...) {
     if (!g_DebugESP) return;

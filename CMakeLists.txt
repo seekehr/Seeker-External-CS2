@@ -12,10 +12,14 @@ add_executable(SeekerExternal
     src/Overlay.cpp
     src/Settings.cpp
     src/MenuOverlay.cpp
+    src/Config.cpp
 )
 
 target_include_directories(SeekerExternal PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(SeekerExternal PRIVATE user32 gdi32)
+if(NOT MSVC)
+    target_link_options(SeekerExternal PRIVATE -static-libgcc -static-libstdc++)
+endif()
 
 # Console vs windowed (MinGW uses -mconsole/-mwindows, MSVC uses /SUBSYSTEM)
 if(NOT DEFINED CONSOLE)

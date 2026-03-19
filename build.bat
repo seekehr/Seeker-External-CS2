@@ -40,6 +40,13 @@ if "%MAKE_EXE%"=="" if exist "%MINGW_BIN%\mingw32-make.exe" set "MAKE_EXE=%MINGW
 if "%MAKE_EXE%"=="" if exist "C:\msys64\mingw64\bin\mingw32-make.exe" set "MAKE_EXE=C:\msys64\mingw64\bin\mingw32-make.exe"
 
 if not defined CMAKE_EXECUTABLE set CMAKE_EXECUTABLE=cmake
+where "%CMAKE_EXECUTABLE%" >nul 2>&1
+if %errorlevel% neq 0 (
+    if not "%MINGW_BIN%"=="in_path" if exist "%MINGW_BIN%\cmake.exe" set "CMAKE_EXECUTABLE=%MINGW_BIN%\cmake.exe"
+    if "%CMAKE_EXECUTABLE%"=="cmake" if exist "C:\msys64\mingw64\bin\cmake.exe" set "CMAKE_EXECUTABLE=C:\msys64\mingw64\bin\cmake.exe"
+    if "%CMAKE_EXECUTABLE%"=="cmake" if exist "C:\msys64\ucrt64\bin\cmake.exe" set "CMAKE_EXECUTABLE=C:\msys64\ucrt64\bin\cmake.exe"
+    if "%CMAKE_EXECUTABLE%"=="cmake" if exist "C:\mingw64\bin\cmake.exe" set "CMAKE_EXECUTABLE=C:\mingw64\bin\cmake.exe"
+)
 
 REM Set compiler paths (full path when using auto-detected MINGW_BIN)
 set "GCC_EXE=gcc"
