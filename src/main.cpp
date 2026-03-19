@@ -18,6 +18,11 @@ int main() {
     }
 
     std::cout << "[Seeker] Attached to CS2\n";
+    if (Offsets::LoadFromFolder("offsets")) {
+        std::cout << "[Seeker] Loaded runtime offsets from offsets/\n";
+    } else {
+        std::cout << "[Seeker] Failed to load offsets from offsets/, using built-in defaults\n";
+    }
 
     if (!g_Game.Init()) {
         std::cerr << "[Seeker] Failed to init game addresses\n";
@@ -40,6 +45,7 @@ int main() {
     while (g_Overlay.running) {
         if (GetAsyncKeyState(VK_END) & 1) break;
         if (GetAsyncKeyState(VK_INSERT) & 1) g_Settings.ToggleMenu();
+        g_Settings.UpdateTriggerbotKeyCapture();
 
         if (!g_Memory.IsValid()) {
             std::cout << "[Seeker] CS2 closed\n";
@@ -85,6 +91,7 @@ int main() {
         }
 
         Features::RunAimbot(enemies);
+        Features::RunTriggerbot(enemies);
 
         if (g_Settings.ConsumeSaveConfigRequest()) {
             if (Config::Save()) std::cout << "[Seeker] Config saved to config/config.json\n";

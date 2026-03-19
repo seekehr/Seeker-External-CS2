@@ -7,6 +7,7 @@ add_executable(SeekerExternal
     src/main.cpp
     src/Memory.cpp
     src/Game.cpp
+    src/Offsets.cpp
     src/Entity.cpp
     src/Features.cpp
     src/Overlay.cpp

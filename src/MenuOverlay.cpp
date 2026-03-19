@@ -1,6 +1,7 @@
 #include "MenuOverlay.h"
 #include <cstring>
 #include <cstdio>
+#include <string>
 
 static void DrawFilledRect(HDC hdc, int x, int y, int w, int h, COLORREF color) {
     HBRUSH brush = CreateSolidBrush(color);
@@ -55,9 +56,9 @@ void MenuOverlay::Draw(HDC hdc, int width, int height) {
     DrawTextLeft(hdc, x + Settings::PADDING, y + Settings::PADDING + 18, "--- CONFIG ---", Settings::TEXT_DIM);
 
     // Toggle rows
-    const char* labels[] = {"ESP", "AIMBOT", "DRAW FOV"};
-    bool values[] = {g_Settings.espEnabled, g_Settings.aimbotEnabled, g_Settings.drawAimbotFov};
-    for (int i = 0; i < 3; i++) {
+    const char* labels[] = {"ESP", "AIMBOT", "DRAW FOV", "TRIGGERBOT"};
+    bool values[] = {g_Settings.espEnabled, g_Settings.aimbotEnabled, g_Settings.drawAimbotFov, g_Settings.triggerbotEnabled};
+    for (int i = 0; i < 4; i++) {
         int rowY = y + 52 + i * Settings::ROW_HEIGHT;
         DrawTextLeft(hdc, x + Settings::PADDING, rowY + 6, labels[i], Settings::TEXT);
 
@@ -78,7 +79,7 @@ void MenuOverlay::Draw(HDC hdc, int width, int height) {
     const int contentW = w - Settings::PADDING * 2;
 
     // Aimbot key dropdown
-    const int keyRowY = y + 52 + 3 * Settings::ROW_HEIGHT;
+    const int keyRowY = y + 52 + 4 * Settings::ROW_HEIGHT;
     const int dropdownY = keyRowY + 16;
     const int dropdownH = 26;
     DrawTextLeft(hdc, contentX, keyRowY, "Aimbot Key", Settings::TEXT);
@@ -100,7 +101,7 @@ void MenuOverlay::Draw(HDC hdc, int width, int height) {
     }
 
     // Smoothness slider
-    const int smoothRowY = y + 52 + 4 * Settings::ROW_HEIGHT + 8;
+    const int smoothRowY = y + 52 + 5 * Settings::ROW_HEIGHT + 8;
     const int sliderY = smoothRowY + 20;
     const int sliderH = 12;
     DrawTextLeft(hdc, contentX, smoothRowY, "Smoothness", Settings::TEXT);
@@ -109,14 +110,14 @@ void MenuOverlay::Draw(HDC hdc, int width, int height) {
     DrawTextLeft(hdc, contentX + contentW - 34, smoothRowY, smoothText, Settings::ACCENT);
     DrawFilledRect(hdc, contentX, sliderY, contentW, sliderH, Settings::OFF_FILL);
     DrawOutlineRect(hdc, contentX, sliderY, contentW, sliderH, Settings::BORDER);
-    float smoothRatio = (g_Settings.aimbotSmoothness - 1.0f) / (25.0f - 1.0f);
+    float smoothRatio = (g_Settings.aimbotSmoothness - 1.0f) / (10.0f - 1.0f);
     if (smoothRatio < 0.0f) smoothRatio = 0.0f;
     if (smoothRatio > 1.0f) smoothRatio = 1.0f;
     const int fillW = static_cast<int>(contentW * smoothRatio);
     DrawFilledRect(hdc, contentX, sliderY, fillW, sliderH, Settings::ON_FILL);
 
     // FOV slider
-    const int fovRowY = y + 52 + 5 * Settings::ROW_HEIGHT + 8;
+    const int fovRowY = y + 52 + 6 * Settings::ROW_HEIGHT + 8;
     const int fovSliderY = fovRowY + 20;
     DrawTextLeft(hdc, contentX, fovRowY, "Aimbot FOV", Settings::TEXT);
     char fovText[32];
@@ -129,6 +130,19 @@ void MenuOverlay::Draw(HDC hdc, int width, int height) {
     if (fovRatio > 1.0f) fovRatio = 1.0f;
     const int fovFillW = static_cast<int>(contentW * fovRatio);
     DrawFilledRect(hdc, contentX, fovSliderY, fovFillW, sliderH, Settings::ON_FILL);
+
+    // Triggerbot keybind button
+    const int triggerKeyRowY = y + 52 + 7 * Settings::ROW_HEIGHT;
+    const int triggerKeyBtnY = triggerKeyRowY + 16;
+    const int triggerKeyBtnH = 26;
+    DrawTextLeft(hdc, contentX, triggerKeyRowY, "Trigger Keybind", Settings::TEXT);
+    DrawFilledRect(hdc, contentX, triggerKeyBtnY, contentW, triggerKeyBtnH, Settings::OFF_FILL);
+    DrawOutlineRect(hdc, contentX, triggerKeyBtnY, contentW, triggerKeyBtnH, Settings::BORDER);
+    const std::string triggerBindText = g_Settings.triggerbotAwaitingKeybind
+        ? "Press keyboard/mouse button..."
+        : g_Settings.GetTriggerbotKeyName();
+    DrawTextLeft(hdc, contentX + 8, triggerKeyBtnY + 6, triggerBindText.c_str(),
+        g_Settings.triggerbotAwaitingKeybind ? Settings::TEXT : Settings::ACCENT);
 
     // Save config button (bottom)
     const int saveY = y + h - 42;

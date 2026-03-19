@@ -53,6 +53,28 @@ float ParseFloat(const std::string& content, const char* key, float current) {
     return parsed;
 }
 
+int ParseInt(const std::string& content, const char* key, int current) {
+    const size_t valuePos = FindValueStart(content, key);
+    if (valuePos == std::string::npos) return current;
+
+    size_t endPos = valuePos;
+    while (endPos < content.size()) {
+        const char c = content[endPos];
+        if ((c >= '0' && c <= '9') || c == '+' || c == '-') {
+            ++endPos;
+            continue;
+        }
+        break;
+    }
+    if (endPos == valuePos) return current;
+
+    const std::string num = content.substr(valuePos, endPos - valuePos);
+    char* endPtr = nullptr;
+    long parsed = std::strtol(num.c_str(), &endPtr, 10);
+    if (endPtr == num.c_str()) return current;
+    return static_cast<int>(parsed);
+}
+
 std::string ParseString(const std::string& content, const char* key, const std::string& current) {
     const size_t valuePos = FindValueStart(content, key);
     if (valuePos == std::string::npos || valuePos >= content.size() || content[valuePos] != '"') return current;
@@ -75,7 +97,9 @@ bool Config::Save() {
     out << "  \"drawAimbotFov\": " << (g_Settings.drawAimbotFov ? "true" : "false") << ",\n";
     out << "  \"aimbotKey\": \"" << g_Settings.GetAimbotKeyName() << "\",\n";
     out << "  \"aimbotSmoothness\": " << g_Settings.aimbotSmoothness << ",\n";
-    out << "  \"aimbotFov\": " << g_Settings.aimbotFov << "\n";
+    out << "  \"aimbotFov\": " << g_Settings.aimbotFov << ",\n";
+    out << "  \"triggerbotEnabled\": " << (g_Settings.triggerbotEnabled ? "true" : "false") << ",\n";
+    out << "  \"triggerbotKeyVk\": " << g_Settings.triggerbotKeyVk << "\n";
     out << "}\n";
 
     return out.good();
@@ -93,6 +117,8 @@ bool Config::Load() {
     g_Settings.drawAimbotFov = ParseBool(content, "drawAimbotFov", g_Settings.drawAimbotFov);
     g_Settings.aimbotSmoothness = ParseFloat(content, "aimbotSmoothness", g_Settings.aimbotSmoothness);
     g_Settings.aimbotFov = ParseFloat(content, "aimbotFov", g_Settings.aimbotFov);
+    g_Settings.triggerbotEnabled = ParseBool(content, "triggerbotEnabled", g_Settings.triggerbotEnabled);
+    g_Settings.triggerbotKeyVk = ParseInt(content, "triggerbotKeyVk", g_Settings.triggerbotKeyVk);
 
     std::string key = ParseString(content, "aimbotKey", g_Settings.GetAimbotKeyName());
     if (key == "Mouse 2") g_Settings.SetAimbotKeyByIndex(0);

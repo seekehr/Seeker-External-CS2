@@ -1,8 +1,10 @@
 #include "Features.h"
 #include "Settings.h"
 #include <Windows.h>
+#include <cstdarg>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <limits>
 #include <unordered_map>
 
@@ -123,6 +125,98 @@ void RunAimbot(const std::vector<PlayerEntity>& enemies) {
     if (SendInput(1, &input, sizeof(INPUT)) == 0) {
         mouse_event(MOUSEEVENTF_MOVE, static_cast<DWORD>(stepX), static_cast<DWORD>(stepY), 0, 0);
     }
+}
+
+void RunTriggerbot(const std::vector<PlayerEntity>& enemies) {
+    auto logTrigger = [](const char* fmt, ...) {
+        static auto last = std::chrono::steady_clock::now();
+        const auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - last).count() < 250) return;
+        last = now;
+        std::printf("[TRIGGER] ");
+        va_list args;
+        va_start(args, fmt);
+        std::vprintf(fmt, args);
+        va_end(args);
+        std::printf("\n");
+    };
+
+    if (!g_Settings.triggerbotEnabled) return;
+    if (!(GetAsyncKeyState(g_Settings.triggerbotKeyVk) & 0x8000)) return;
+
+    uintptr_t localPawn = 0;
+    if (!g_Memory.Read(g_Game.localPawnAddr, localPawn) || !localPawn) {
+        logTrigger("no local pawn");
+        return;
+    }
+
+    int crosshairIndex = -1;
+    if (!g_Memory.Read(localPawn + Offsets::C_CSPlayerPawnBase::m_iIDEntIndex, crosshairIndex)) {
+        logTrigger("failed read m_iIDEntIndex");
+        return;
+    }
+    if (crosshairIndex <= 0) {
+        logTrigger("no target index=%d", crosshairIndex);
+        return;
+    }
+
+    // m_iIDEntIndex is entity index; GetEntityFromHandle works for low-index values too.
+    uintptr_t targetPawn = g_Game.GetEntityFromHandle(static_cast<uint32_t>(crosshairIndex));
+    if (!targetPawn) {
+        // Fallback to on-screen box test if entity lookup fails.
+        const float cx = static_cast<float>(g_Game.screenWidth) * 0.5f;
+        const float cy = static_cast<float>(g_Game.screenHeight) * 0.5f;
+        bool targetUnderCrosshair = false;
+        for (const auto& e : enemies) {
+            if (!e.alive || !e.onScreen) continue;
+            const float topY = (e.screenHeadPos.y < e.screenPos.y) ? e.screenHeadPos.y : e.screenPos.y;
+            const float bottomY = (e.screenHeadPos.y > e.screenPos.y) ? e.screenHeadPos.y : e.screenPos.y;
+            const float centerX = (e.screenHeadPos.x + e.screenPos.x) * 0.5f;
+            const float boxHeight = bottomY - topY;
+            if (boxHeight < 6.0f) continue;
+            const float boxWidth = boxHeight * 0.45f;
+            const float left = centerX - boxWidth * 0.5f;
+            const float right = centerX + boxWidth * 0.5f;
+            if (cx >= left && cx <= right && cy >= topY && cy <= bottomY) {
+                targetUnderCrosshair = true;
+                break;
+            }
+        }
+        if (!targetUnderCrosshair) {
+            logTrigger("target lookup failed idx=%d and fallback miss", crosshairIndex);
+            return;
+        }
+    } else {
+        int targetHp = 0;
+        int targetTeam = 0;
+        if (!g_Memory.Read(targetPawn + Offsets::C_BaseEntity::m_iHealth, targetHp) || targetHp <= 0) {
+            logTrigger("invalid target hp idx=%d", crosshairIndex);
+            return;
+        }
+        if (!g_Memory.Read(targetPawn + Offsets::C_BaseEntity::m_iTeamNum, targetTeam)) {
+            logTrigger("failed target team idx=%d", crosshairIndex);
+            return;
+        }
+
+        uintptr_t localController = 0;
+        int localTeam = 0;
+        if (g_Memory.Read(g_Game.localControllerAddr, localController) && localController) {
+            g_Memory.Read(localController + Offsets::C_BaseEntity::m_iTeamNum, localTeam);
+        }
+        if (localTeam != 0 && targetTeam == localTeam) {
+            logTrigger("skip teammate idx=%d", crosshairIndex);
+            return;
+        }
+    }
+
+    static auto lastShot = std::chrono::steady_clock::now();
+    const auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastShot).count() < 50) return;
+    lastShot = now;
+
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+    logTrigger("shot fired idx=%d", crosshairIndex);
 }
 
 }  // namespace Features
